@@ -3,6 +3,8 @@
 #include "wifi-credentials.h"
 #include "LedMatrix.h"
 
+#include "message-form.h"
+
 #define NUMBER_OF_DEVICES 4
 #define CS_PIN 15
 LedMatrix ledMatrix = LedMatrix(NUMBER_OF_DEVICES, CS_PIN);
@@ -61,8 +63,27 @@ String DisplayAddress(const IPAddress& address)
 
 void handleRootPath()
 {
-  if (server.method() == HTTP_GET)
+  auto requestMethod = server.method();
+  if (requestMethod == HTTP_GET)
   {
-    server.send(200, "text/plain", "hello from esp8266!");
+    sendMessageForm();
   }
+  else if (requestMethod == HTTP_POST)
+  {
+    Serial.println("post received");
+    if (server.hasArg("message"))
+    {
+      String message = server.arg("message");
+      Serial.print("message =");
+      Serial.println(message);
+
+      setLedMatrixMessage(ledMatrix, message);
+      sendMessageForm();
+    }
+  }
+}
+
+void sendMessageForm()
+{
+  server.send(200, "text/html", messageHtml);
 }
