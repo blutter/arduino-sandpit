@@ -4,6 +4,7 @@
 #include "LedMatrix.h"
 
 #include "message-form.h"
+#include "config.h"
 
 #define NUMBER_OF_DEVICES 4
 #define CS_PIN 15
@@ -13,9 +14,15 @@ unsigned long previousUpdateTimeMs;
 
 ESP8266WebServer server(80);
 
+DisplayConfig config;
+
+#define STARTUP_MESSAGE_DELAY_MS 2000
+unsigned long startupTime;
+
 void setup() {
   Serial.begin(115200);
 
+  startupTime = millis();
   initLedMatrix(ledMatrix);
 
   Serial.print("Connecting to ");
@@ -31,6 +38,8 @@ void setup() {
 
   Serial.println(ipAddress);
   setLedMatrixMessage(ledMatrix, DisplayAddress(ipAddress));
+
+  ReadConfig(config);
 
   server.on("/", handleRootPath);
   server.begin();
@@ -70,6 +79,11 @@ String DisplayAddress(const IPAddress& address)
 {
   return String(address[0]) + "." + String(address[1]) + "." +
          String(address[2]) + "." + String(address[3]);
+}
+
+bool isStartupPeriod(unsigned long startupTimeMs, unsigned long currentTimeMs) 
+{
+  return (currentTimeMs - startupTimeMs) < STARTUP_MESSAGE_DELAY_MS;
 }
 
 void handleRootPath()
