@@ -8,6 +8,8 @@
 #define NUMBER_OF_DEVICES 4
 #define CS_PIN 15
 LedMatrix ledMatrix = LedMatrix(NUMBER_OF_DEVICES, CS_PIN);
+unsigned long scrollDelayMs = 0;
+unsigned long previousUpdateTimeMs;
 
 ESP8266WebServer server(80);
 
@@ -32,13 +34,22 @@ void setup() {
 
   server.on("/", handleRootPath);
   server.begin();
+
+  previousUpdateTimeMs = millis();
 }
 
 void loop() {
-  ledMatrix.clear();
-  ledMatrix.scrollTextLeft();
-  ledMatrix.drawText();
-  ledMatrix.commit(); // commit transfers the byte buffer to the displays
+  auto currentLoopStartTimeMs = millis();
+
+  if (isScrollDelayExpired(currentLoopStartTimeMs, previousUpdateTimeMs, scrollDelayMs))
+  {
+    previousUpdateTimeMs = currentLoopStartTimeMs;
+
+    ledMatrix.clear();
+    ledMatrix.scrollTextLeft();
+    ledMatrix.drawText();
+    ledMatrix.commit(); // commit transfers the byte buffer to the displays
+  }
 
   server.handleClient();
 }
@@ -71,11 +82,19 @@ void handleRootPath()
   else if (requestMethod == HTTP_POST)
   {
     Serial.println("post received");
-    if (server.hasArg("message"))
+    if (server.hasArg("message") && server.hasArg("delayMs"))
     {
       String message = server.arg("message");
-      Serial.print("message =");
+      Serial.print("message = ");
       Serial.println(message);
+
+      String delayMsStr = server.arg("delayMs");
+      Serial.print("delayMs = ");
+      auto delayMs = delayMsStr.toInt();
+      delayMs = (delayMs < 0) ? 0 : delayMs;
+      Serial.println(delayMs);
+
+      scrollDelayMs = delayMs;
 
       setLedMatrixMessage(ledMatrix, message);
       sendMessageForm();
@@ -86,4 +105,12 @@ void handleRootPath()
 void sendMessageForm()
 {
   server.send(200, "text/html", messageHtml);
+}
+
+bool isScrollDelayExpired(
+  unsigned long currentLoopStartTimeMs, 
+  unsigned long previousUpdateTimeMs, 
+  unsigned long scrollDelayMs)
+{
+  return (currentLoopStartTimeMs - previousUpdateTimeMs) >= scrollDelayMs;
 }

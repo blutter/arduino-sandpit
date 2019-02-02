@@ -6,6 +6,7 @@ const String messageHtml = R"##(<html>
 <body>
   <form action="/">
     Message: <input type="text" name="message">
+    Update Delay (ms): <input type="number" name="delayMs" value=0 min=0 max=10000>
     <input type="submit" formmethod="post" value="Submit">
   </form>
 </body>
