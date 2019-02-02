@@ -1,4 +1,5 @@
 #include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
 #include "wifi-credentials.h"
 #include "LedMatrix.h"
 
@@ -6,10 +7,10 @@
 #define CS_PIN 15
 LedMatrix ledMatrix = LedMatrix(NUMBER_OF_DEVICES, CS_PIN);
 
-WiFiServer server(80);
+ESP8266WebServer server(80);
 
 void setup() {
-  Serial.begin(115200); // For debugging output
+  Serial.begin(115200);
 
   initLedMatrix(ledMatrix);
 
@@ -27,6 +28,7 @@ void setup() {
   Serial.println(ipAddress);
   setLedMatrixMessage(ledMatrix, DisplayAddress(ipAddress));
 
+  server.on("/", handleRootPath);
   server.begin();
 }
 
@@ -36,20 +38,7 @@ void loop() {
   ledMatrix.drawText();
   ledMatrix.commit(); // commit transfers the byte buffer to the displays
 
-  WiFiClient client = server.available();
-  if (!client) 
-  {
-    return;
-  }
-
-  Serial.println("New client - enter a message");
-  String message = client.readStringUntil('\r');
-  setLedMatrixMessage(ledMatrix, message);
-  Serial.println(message);
-  client.flush();
-
-  client.stop();
-  Serial.println("Client disconnected.");
+  server.handleClient();
 }
 
 void initLedMatrix(LedMatrix& ledMatrix)
@@ -68,4 +57,12 @@ String DisplayAddress(const IPAddress& address)
 {
   return String(address[0]) + "." + String(address[1]) + "." +
          String(address[2]) + "." + String(address[3]);
+}
+
+void handleRootPath()
+{
+  if (server.method() == HTTP_GET)
+  {
+    server.send(200, "text/plain", "hello from esp8266!");
+  }
 }
