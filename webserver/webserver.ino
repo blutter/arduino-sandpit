@@ -16,7 +16,21 @@ void setup() {
 
   Serial.print("Connected. IP address: ");
   Serial.println(WiFi.localIP());
+  server.begin();
 }
 
 void loop() {
+  WiFiClient client = server.available();
+  if (!client) 
+  {
+    return;
+  }
+
+  Serial.println("New client - enter a message");
+  String request = client.readStringUntil('\r');
+  Serial.println(request);
+  client.flush();
+
+  client.stop();
+  Serial.println("Client disconnected.");
 }
