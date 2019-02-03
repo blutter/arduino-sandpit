@@ -5,9 +5,16 @@
 
 #include "message-form.h"
 
+enum ScrollDirection {
+  Left,
+  Right,
+  None
+};
+
 #define NUMBER_OF_DEVICES 4
 #define CS_PIN 15
 LedMatrix ledMatrix = LedMatrix(NUMBER_OF_DEVICES, CS_PIN);
+ScrollDirection scrollDirection = Left;
 unsigned long scrollDelayMs = 0;
 unsigned long previousUpdateTimeMs;
 
@@ -46,7 +53,17 @@ void loop() {
     previousUpdateTimeMs = currentLoopStartTimeMs;
 
     ledMatrix.clear();
-    ledMatrix.scrollTextLeft();
+    switch (scrollDirection)
+    {
+      case Left:
+        ledMatrix.scrollTextLeft();
+        break;
+      case Right:
+        ledMatrix.scrollTextRight();
+        break;
+      default:
+        break;
+    }
     ledMatrix.drawText();
     ledMatrix.commit(); // commit transfers the byte buffer to the displays
   }
@@ -98,6 +115,21 @@ void handleRootPath()
 
       setLedMatrixMessage(ledMatrix, message);
       sendMessageForm();
+    }
+
+    if (server.hasArg("scrollDirection"))
+    {
+      auto scrollDirectionStr = server.arg("scrollDirection");
+      Serial.print("scrollDirection = ");
+      Serial.println(scrollDirectionStr);
+      if (scrollDirectionStr == "left")
+      {
+        scrollDirection = Left;
+      } else if (scrollDirectionStr == "right") {
+        scrollDirection = Right;
+      } else {
+        scrollDirection = None;
+      }
     }
   }
 }
