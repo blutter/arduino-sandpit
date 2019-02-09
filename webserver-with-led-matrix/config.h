@@ -1,9 +1,16 @@
-struct {
+#ifndef __CONFIG_H
+#define __CONFIG_H
+
+#include <Arduino.h>
+
+struct DisplayConfig {
   byte brightness;
-  unsignedLong scrollDelayMs;
+  unsigned long scrollDelayMs;
   char message[200];
   char messageTerminator = '\0';
-} DisplayConfig;
+};
 
-void ReadConfig(DisplayConfig& config);
-void WriteConfig(const DisplayConfig& config);
+void ReadConfig(struct DisplayConfig& config);
+void WriteConfig(const struct DisplayConfig& config);
+
+#endif
