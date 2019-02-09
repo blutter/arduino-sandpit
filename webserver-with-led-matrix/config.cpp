@@ -1,7 +1,8 @@
 #include <EEPROM.h>
+#include "config.h"
 
-const uint EepromBaseAddress = 0;
-const uint EepromBlockSize = 512;
+const unsigned int EepromBaseAddress = 0;
+const unsigned int EepromBlockSize = 512;
 
 void ReadConfig(DisplayConfig& config)
 {

@@ -12,15 +12,15 @@ LedMatrix ledMatrix = LedMatrix(NUMBER_OF_DEVICES, CS_PIN);
 
 ESP8266WebServer server(80);
 
-DisplayConfig config;
+struct DisplayConfig config;
 
-#define STARTUP_MESSAGE_DELAY_MS 2000
-unsigned long startupTime;
+#define STARTUP_MESSAGE_DELAY_MS 10000
+unsigned long startupTimeMs;
+bool isConfigMessageDisplayed;
 
 void setup() {
   Serial.begin(115200);
 
-  startupTime = millis();
   initLedMatrix(ledMatrix);
 
   Serial.print("Connecting to ");
@@ -38,12 +38,24 @@ void setup() {
   setLedMatrixMessage(ledMatrix, DisplayAddress(ipAddress));
 
   ReadConfig(config);
+  isConfigMessageDisplayed = false;
 
   server.on("/", handleRootPath);
   server.begin();
+
+  startupTimeMs = millis();
 }
 
 void loop() {
+  auto currentTimeMs = millis();
+
+  if (!isStartupPeriod(startupTimeMs, currentTimeMs) && !isConfigMessageDisplayed)
+  {
+    Serial.println("Displaying configured message");
+    setLedMatrixMessage(ledMatrix, config.message);
+    isConfigMessageDisplayed = true;
+  }
+
   ledMatrix.clear();
   ledMatrix.scrollTextLeft();
   ledMatrix.drawText();
@@ -61,6 +73,8 @@ void initLedMatrix(LedMatrix& ledMatrix)
 
 void setLedMatrixMessage(LedMatrix& ledMatrix, String message)
 {
+  Serial.print("Message = ");
+  Serial.println(message);
   ledMatrix.setText(message);
 }
 
@@ -93,6 +107,9 @@ void handleRootPath()
 
       setLedMatrixMessage(ledMatrix, message);
       sendMessageForm();
+
+      message.toCharArray(config.message, sizeof(config.message));
+      WriteConfig(config);
     }
   }
 }
